@@ -1,9 +1,9 @@
 import requests
 
 
-class Test11:
+class Test12:
 
-    def test_check_cookie(self):
+    def test_check_header(self):
         url = "https://playground.learnqa.ru/api/homework_header"
 
         response = requests.post(url)
