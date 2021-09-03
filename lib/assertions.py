@@ -49,3 +49,7 @@ class Assertions:
     def assert_response_content(response: Response, expected_response_content):
         assert response.content.decode(
             "utf-8") == expected_response_content, f"Unexpected response content! Expected: {expected_response_content}. Actual: {response.content.decode('utf-8')}"
+
+    @staticmethod
+    def assert_text_in_value(response, expected_response_content):
+       assert response == expected_response_content, f"Unexpected response content! Expected: {response}. Actual: {expected_response_content}"
