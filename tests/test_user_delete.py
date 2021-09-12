@@ -1,19 +1,27 @@
 import time
 
+import allure
+from allure_commons.types import Severity
+
 from lib.assertions import Assertions
 from lib.base_case import BaseCase
 from lib.my_requests import MyRequests
 
 
+@allure.epic("Delete cases")
+@allure.tag("Delete")
 class TestUserDelete(BaseCase):
+
+    @allure.description("This test check do not delete test users with ID  2")
+    @allure.severity(Severity.NORMAL)
     def test_delete_user_with_user_id_2(self):
         data = {
             'email': 'vinkotov@example.com',
             'password': '1234'
         }
-
         # LOGIN
-        response1 = MyRequests.post("/user/login", data=data)
+        with allure.step('Login user with id 2'):
+            response1 = MyRequests.post("/user/login", data=data)
         print(f"ответ запроса /user/login - {response1.content}")
 
         auth_sid = self.get_cookie(response1, "auth_sid")
@@ -22,10 +30,11 @@ class TestUserDelete(BaseCase):
         print(user_id_from_auth_method)
 
         # DELETE
-        response2 = MyRequests.delete(f"/user/{user_id_from_auth_method}",
-                                      headers={"x-csrf-token": token},
-                                      cookies={"auth_sid": auth_sid}
-                                      )
+        with allure.step('Delete user with id 2'):
+            response2 = MyRequests.delete(f"/user/{user_id_from_auth_method}",
+                                          headers={"x-csrf-token": token},
+                                          cookies={"auth_sid": auth_sid}
+                                          )
         print(f"ответ запроса /user/{user_id_from_auth_method} - {response2.content}")
         print(response2.status_code)
 
@@ -33,19 +42,24 @@ class TestUserDelete(BaseCase):
         Assertions.assert_response_content(response2, 'Please, do not delete test users with ID 1, 2, 3, 4 or 5.')
 
         # GET
-        response3 = MyRequests.get(
-            f"/user/{user_id_from_auth_method}",
-            headers={"x-csrf-token": token},
-            cookies={"auth_sid": auth_sid},
-        )
+        with allure.step('Get user with id 2'):
+            response3 = MyRequests.get(
+                f"/user/{user_id_from_auth_method}",
+                headers={"x-csrf-token": token},
+                cookies={"auth_sid": auth_sid},
+            )
 
         expected_fields = ["id", "username", "email", "firstName", "lastName"]
         Assertions.assert_json_has_keys(response3, expected_fields)
 
+    @allure.description("This test check delete just created user")
+    @allure.severity(Severity.CRITICAL)
     def test_delete_just_created_user(self):
         # REGISTER
+
         register_data = self.prepare_registration_data()
-        response1 = MyRequests.post("/user/", data=register_data)
+        with allure.step('Register new user'):
+            response1 = MyRequests.post("/user/", data=register_data)
 
         Assertions.assert_code_status(response1, 200)
         Assertions.assert_json_has_key(response1, "id")
@@ -60,35 +74,40 @@ class TestUserDelete(BaseCase):
             'email': email,
             'password': password
         }
-
-        response2 = MyRequests.post("/user/login", data=login_data)
+        with allure.step('Login user just created'):
+            response2 = MyRequests.post("/user/login", data=login_data)
         auth_sid = self.get_cookie(response2, "auth_sid")
         token = self.get_header(response2, "x-csrf-token")
 
         # DELETE
-        response2 = MyRequests.delete(f"/user/{user_id_from_auth_method}",
-                                      headers={"x-csrf-token": token},
-                                      cookies={"auth_sid": auth_sid}
-                                      )
+        with allure.step('Delete user just created'):
+            response2 = MyRequests.delete(f"/user/{user_id_from_auth_method}",
+                                          headers={"x-csrf-token": token},
+                                          cookies={"auth_sid": auth_sid}
+                                          )
         print(f"ответ запроса /user/{user_id_from_auth_method} - {response2.content}")
         print(response2.status_code)
 
         Assertions.assert_code_status(response2, 200)
 
         # GET
-        response3 = MyRequests.get(
-            f"/user/{user_id_from_auth_method}",
-            headers={"x-csrf-token": token},
-            cookies={"auth_sid": auth_sid},
-        )
+        with allure.step('Get user just created and deleted'):
+            response3 = MyRequests.get(
+                f"/user/{user_id_from_auth_method}",
+                headers={"x-csrf-token": token},
+                cookies={"auth_sid": auth_sid},
+            )
 
         Assertions.assert_code_status(response2, 200)
         Assertions.assert_response_content(response3, 'User not found')
 
+    @allure.description("This test check not delete user with authorization other user")
+    @allure.severity(Severity.CRITICAL)
     def test_delete_user_with_authorization_other_user(self):
         # REGISTER USER1
         register_data = self.prepare_registration_data()
-        response1_1 = MyRequests.post("/user/", data=register_data)
+        with allure.step('Register new user1'):
+            response1_1 = MyRequests.post("/user/", data=register_data)
 
         Assertions.assert_code_status(response1_1, 200)
         Assertions.assert_json_has_key(response1_1, "id")
@@ -103,7 +122,8 @@ class TestUserDelete(BaseCase):
 
         # REGISTER USER2
         register_data = self.prepare_registration_data()
-        response1_2 = MyRequests.post("/user/", data=register_data)
+        with allure.step('Register new user2'):
+            response1_2 = MyRequests.post("/user/", data=register_data)
 
         Assertions.assert_code_status(response1_2, 200)
         Assertions.assert_json_has_key(response1_2, "id")
@@ -120,7 +140,8 @@ class TestUserDelete(BaseCase):
             'password': password1
         }
 
-        response2_1 = MyRequests.post("/user/login", data=login_data)
+        with allure.step('Login user1 just created'):
+            response2_1 = MyRequests.post("/user/login", data=login_data)
         auth_sid1 = self.get_cookie(response2_1, "auth_sid")
         token1 = self.get_header(response2_1, "x-csrf-token")
         print(f"ответ по первому пользователю /user/login {response2_1.content}")
@@ -130,30 +151,32 @@ class TestUserDelete(BaseCase):
             'email': email2,
             'password': password2
         }
-
-        response2_2 = MyRequests.post("/user/login", data=login_data)
+        with allure.step('Login user2 just created'):
+            response2_2 = MyRequests.post("/user/login", data=login_data)
         auth_sid2 = self.get_cookie(response2_2, "auth_sid")
         token2 = self.get_header(response2_2, "x-csrf-token")
         print(f"ответ по второму пользователю /user/login {response2_2.content}")
 
         # DELETE USER2 WITH TOKEN,COOKIE USER1
         new_name = "Changed Name"
-        response3 = MyRequests.delete(
-            f"/user/{user_id2}",
-            headers={"x-csrf-token": token1},
-            cookies={"auth_sid": auth_sid1},
-            data={"firstName": new_name}
-        )
+        with allure.step('Delete user2 with token and cookie user1'):
+            response3 = MyRequests.delete(
+                f"/user/{user_id2}",
+                headers={"x-csrf-token": token1},
+                cookies={"auth_sid": auth_sid1},
+                data={"firstName": new_name}
+            )
 
         Assertions.assert_code_status(response3, 200)
         print(f"удаление второго пользователя с токеном первого ответ {response3.content}")
 
         # GET INFO USER2_ CHECK NAME CORRECT WITHOUT CHANGE IN EDIT METHOD
-        response4 = MyRequests.get(
-            f"/user/{user_id2}",
-            headers={"x-csrf-token": token2},
-            cookies={"auth_sid": auth_sid2},
-        )
+        with allure.step('Get info user2 and check name correct without edit'):
+            response4 = MyRequests.get(
+                f"/user/{user_id2}",
+                headers={"x-csrf-token": token2},
+                cookies={"auth_sid": auth_sid2},
+            )
         print(f"ответ по четвертому запросу {response4.content}")
         Assertions.assert_json_value_by_name(
             response4,

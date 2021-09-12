@@ -1,11 +1,14 @@
 import allure
 import pytest
+from allure_commons.types import Severity
+
 from lib.assertions import Assertions
 from lib.base_case import BaseCase
 from lib.my_requests import MyRequests
 
 
-@allure.epic("Authorization cases")
+@allure.epic("Registration cases")
+@allure.tag("Registration")
 class TestUserRegister(BaseCase):
     exclude_params = {
         "password",
@@ -16,6 +19,7 @@ class TestUserRegister(BaseCase):
     }
 
     @allure.description("This test unsuccessfully registration with incorrect email - without '@'")
+    @allure.severity(Severity.CRITICAL)
     def test_create_user_with_incorrect_email(self):
         data = self.prepare_registration_data('vinkotovexample.com')
 
@@ -27,6 +31,7 @@ class TestUserRegister(BaseCase):
         Assertions.assert_response_content(response, "Invalid email format")
 
     @allure.description("This test unsuccessfully registration with incorrect firstName with 1 symbol")
+    @allure.severity(Severity.NORMAL)
     def test_create_user_with_name1(self):
         name_random = self.generate_random_string(1)
         print(f"print name {name_random}")
@@ -40,6 +45,7 @@ class TestUserRegister(BaseCase):
         Assertions.assert_response_content(response, "The value of 'firstName' field is too short")
 
     @allure.description("This test unsuccessfully registration with incorrect firstName with > 250 symbols")
+    @allure.severity(Severity.MINOR)
     def test_create_user_with_name251(self):
         name_random = self.generate_random_string(251)
         print(f"print name {name_random}")
@@ -53,6 +59,7 @@ class TestUserRegister(BaseCase):
         Assertions.assert_response_content(response, "The value of 'firstName' field is too long")
 
     @allure.description(f"This test unsuccessfully registration without one of params - {exclude_params}")
+    @allure.severity(Severity.CRITICAL)
     @pytest.mark.parametrize('exclude_params', exclude_params)
     def test_create_user_with_one_of_params(self, exclude_params):
         data = self.prepare_registration_data_witout_params(exclude_params)
@@ -65,6 +72,7 @@ class TestUserRegister(BaseCase):
         Assertions.assert_response_content(response, f"The following required params are missed: {exclude_params}")
 
     @allure.description("This test successfully registration for new user")
+    @allure.severity(Severity.BLOCKER)
     def test_create_user_successfully(self):
         data = self.prepare_registration_data()
 
@@ -75,6 +83,7 @@ class TestUserRegister(BaseCase):
         Assertions.assert_json_has_key(response, "id")
 
     @allure.description("This test unsuccessfully registration with existing email")
+    @allure.severity(Severity.NORMAL)
     def test_create_user_with_existing_email(self):
         email = 'vinkotov@example.com'
         data = self.prepare_registration_data(email)
